@@ -9,7 +9,11 @@ message(STATUS "USE_PTHREAD:" ${USE_PTHREAD})
 
 include_directories(.)
 
-add_library(points-runtime pr_pool_blocklist.c pr_countdownlatch.c pr_thread_attr.c)
+add_library(points-runtime pr_pool_blocklist.c
+        pr_countdownlatch.c
+        pr_thread_attr.c
+        pr_scopeguard.c
+        )
 
 if(USE_PTHREAD)
     target_compile_definitions(points-runtime PRIVATE USE_PTHREAD)
@@ -46,3 +50,6 @@ target_link_libraries(pr_countdownlatch.t points-runtime pthread)
 
 add_executable(pr_thread.t pr_thread.t.c)
 target_link_libraries(pr_thread.t points-runtime pthread)
+
+add_executable(pr_scopeguard.t pr_scopeguard.t.c)
+target_link_libraries(pr_scopeguard.t points-runtime pthread)
