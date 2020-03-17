@@ -5,6 +5,7 @@
 #include <pr_thread.h>
 #include <pr_thread_attr.h>
 #include <pr_types.h>
+#include <pr_scopeguard.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -26,20 +27,27 @@ int main(int argc, char** argv){
     pr_thread_t* thread1;
     pr_thread_t* thread2;
 
-    struct ThreadContext context;
-    context.d_value=0;
+    pr_scopeguard_t* scope = pr_scopeguard_new();
+    {
+        struct ThreadContext context;
+        context.d_value = 0;
 
-    thread1 = pr_thread_new(NULL, threadFn, &context);
-    thread2 = pr_thread_new(NULL, threadFn, &context);
 
-    pr_thread_sleep(1000*10);
-    context.d_isStop=ePR_TRUE;
+        thread1 = pr_thread_new(NULL, threadFn, &context);
+        pr_scopeguard_onexit(scope, pr_thread_delete, &thread1);
+        thread2 = pr_thread_new(NULL, threadFn, &context);
+        pr_scopeguard_onexit(scope, pr_thread_delete, &thread2);
 
-    pr_thread_join(thread1);
-    pr_thread_join(thread2);
 
-    pr_thread_delete(&thread1);
-    pr_thread_delete(&thread2);
+        pr_thread_sleep(1000 * 10);
+        context.d_isStop = ePR_TRUE;
+
+        pr_thread_join(thread1);
+        pr_thread_join(thread2);
+    }
+    pr_scopeguard_delete(&scope);
+//    pr_thread_delete(&thread1);
+//    pr_thread_delete(&thread2);
 
     return 0;
 }
