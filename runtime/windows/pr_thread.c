@@ -99,7 +99,8 @@ void pr_thread_sleep(unsigned long milliSeconds){
 }
 
 void pr_thread_exit(int code){
-    ExitThread(code);
+    _endthreadex(code);
+//    ExitThread(code);
 }
 
 pr_thread_id_t pr_thread_self(){
