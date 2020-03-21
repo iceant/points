@@ -22,12 +22,14 @@ if(USE_PTHREAD)
             unix/pr_mutex.c
             unix/pr_condition.c
             unix/pr_thread.c
+            unix/pr_threadlocal.c
             )
 else()
     target_sources(points-runtime PRIVATE
             windows/pr_mutex.c
             windows/pr_condition.c
             windows/pr_thread.c
+            windows/pr_threadlocal.c
             )
 endif()
 
