@@ -15,7 +15,7 @@ typedef struct link_s{
 
 struct logger_buffervector_s{
     link_t   d_head;
-    link_t * d_freelist_p;
+    link_t * d_tail_p;
     int      d_size;
 };
 
@@ -29,7 +29,7 @@ logger_buffervector_t* logger_buffervector_new(){
     assert(p);
     p->d_head.d_next_p = NULL;
     p->d_head.d_value_p = NULL;
-    p->d_freelist_p = &p->d_head;
+    p->d_tail_p = &p->d_head;
     p->d_size = 0;
     return p;
 }
@@ -52,7 +52,7 @@ void logger_buffervector_delete(logger_buffervector_t** pVector, void (*destruct
             FREE(p);
         }
     }
-    vector->d_freelist_p = &vector->d_head;
+    vector->d_tail_p = &vector->d_head;
     FREE(*pVector);
 }
 
@@ -63,8 +63,8 @@ void logger_buffervector_add(logger_buffervector_t* vector, logger_buffer_t* buf
     assert(p);
     p->d_value_p = buffer;
     p->d_next_p = NULL;
-    vector->d_freelist_p->d_next_p = p;
-    vector->d_freelist_p = p;
+    vector->d_tail_p->d_next_p = p;
+    vector->d_tail_p = p;
     vector->d_size+=1;
 }
 
@@ -81,7 +81,7 @@ void logger_buffervector_pop(logger_buffervector_t* vector, logger_buffer_t** bu
    *buffer = p->d_value_p;
    vector->d_size-=1;
    if(vector->d_size==0){
-       vector->d_freelist_p = &vector->d_head;
+       vector->d_tail_p = &vector->d_head;
    }
    FREE(p);
 }
@@ -103,7 +103,7 @@ void logger_buffervector_clear(logger_buffervector_t* vector, void (*releaseFn)(
             FREE(p);
         }
     }
-    vector->d_freelist_p = &vector->d_head;
+    vector->d_tail_p = &vector->d_head;
     vector->d_size = 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
