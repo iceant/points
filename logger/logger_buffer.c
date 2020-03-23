@@ -26,6 +26,7 @@ logger_buffer_t * logger_buffer_new(int capacity){
     buffer->d_capacity = capacity;
     buffer->d_data_p = MALLOC(sizeof(char)*capacity);
     buffer->d_used = 0;
+    memset(buffer->d_data_p, 0, capacity);
     return buffer;
 }
 
@@ -65,4 +66,9 @@ int logger_buffer_avail(logger_buffer_t* buffer){
     return buffer->d_capacity-buffer->d_used;
 }
 
+void logger_buffer_reset(logger_buffer_t* buffer){
+    assert(buffer);
+    memset(buffer->d_data_p, 0, buffer->d_capacity);
+    buffer->d_used = 0;
+}
 

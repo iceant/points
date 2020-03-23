@@ -28,4 +28,6 @@ int logger_buffer_used(logger_buffer_t*);
 int logger_buffer_avail(logger_buffer_t*);
     // available blank chunk to write
 
+void logger_buffer_reset(logger_buffer_t*);
+
 #endif //INCLUDED_LOGGER_BUFFER_H

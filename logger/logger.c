@@ -84,8 +84,9 @@ static inline void flushBuffersToFile(logger_t* logger, logger_buffervector_t* v
     while(logger_buffervectoriter_hasmore(iter)){
         logger_buffer_t* buffer = logger_buffervectoriter_get(iter);
         fwrite(logger_buffer_get(buffer), sizeof(char), logger_buffer_used(buffer), logger->d_file_p);
-        logger_buffer_delete(&buffer);
-        logger_buffervectoriter_remove(iter);
+//        logger_buffer_delete(&buffer);
+//        logger_buffervectoriter_remove(iter);
+        logger_buffervectoriter_next(iter);
     }
     logger_buffervectoriter_delete(&iter);
     fflush(logger->d_file_p);
@@ -93,7 +94,6 @@ static inline void flushBuffersToFile(logger_t* logger, logger_buffervector_t* v
 
 static void bufferRelease(logger_buffer_t* buffer, void* args){
     assert(buffer);
-    assert(args);
     logger_buffer_delete(&buffer);
 }
 
@@ -130,10 +130,17 @@ static void logger_threadFn(void* args){
 
         // refill newBuffer1, newBuffer2
 
-        newBuffer1 = logger_buffer_new(BUFFER_SIZE);
+//        newBuffer1 = logger_buffer_new(BUFFER_SIZE);
+//        if(newBuffer2==NULL){
+//            newBuffer2 = logger_buffer_new(BUFFER_SIZE);
+//        }
+        logger_buffervector_pop(buffersToWrite, &newBuffer1);
+        logger_buffer_reset(newBuffer1);
         if(newBuffer2==NULL){
-            newBuffer2 = logger_buffer_new(BUFFER_SIZE);
+            logger_buffervector_pop(buffersToWrite, &newBuffer2);
+            logger_buffer_reset(newBuffer2);
         }
+        logger_buffervector_clear(buffersToWrite, bufferRelease, NULL);
     }
 
     pr_mutex_lock(logger->d_lock_p);
@@ -167,16 +174,16 @@ static void logger_threadFn(void* args){
     pr_thread_exit(0);
 }
 
-static
+static inline
 void logger_append(logger_t* logger, const char* logline, int len){
     assert(logger);
     assert(logline);
-    if(logger->d_status!=STATUS_RUNNING) return;
     pr_mutex_lock(logger->d_lock_p);
-    if(logger_buffer_avail(logger->d_current_p)>len){
+    if(logger_buffer_avail(logger->d_current_p)>=len){
         logger_buffer_append(logger->d_current_p, logline, len);
     }else{
         logger_buffervector_add(logger->d_buffers_p, logger->d_current_p);
+        logger->d_current_p = NULL;
         if(logger->d_next_p!=NULL){
             logger->d_current_p = logger->d_next_p;
             logger->d_next_p = NULL;
@@ -184,7 +191,7 @@ void logger_append(logger_t* logger, const char* logline, int len){
             logger->d_current_p = logger_buffer_new(BUFFER_SIZE);
         }
         logger_buffer_append(logger->d_current_p, logline, len);
-        pr_condition_notify(logger->d_cond_p);// notify buffers need to bu flushed.
+        pr_condition_notify(logger->d_cond_p);// notify buffers need to be flushed.
     }
     pr_mutex_unlock(logger->d_lock_p);
 }
@@ -285,7 +292,6 @@ pr_bool_t logger_isstopped(logger_t* logger){
 
 void logger_printf(logger_t* logger, logger_level_t level, const char* file, const int line, const char* fmt, ...){
     if(logger->d_level<level) return;
-    if(logger->d_status!=STATUS_RUNNING) return;
     // 1. get timestamp
     char timestamp[84];
     getTimestamp(timestamp);
@@ -316,14 +322,14 @@ void logger_printf(logger_t* logger, logger_level_t level, const char* file, con
     char* linelog = NULL;
     linelog = malloc(linelogSize * sizeof(char));
     while(1){
-        ret = sprintf(linelog, "%s %09llu %s %s - %s:%d\n", timestamp, threadId, LOGGER_LEVEL(level), content, file, line);
+        ret = sprintf(linelog, "%s %09lu %s %s - %s:%d\n", timestamp, threadId, LOGGER_LEVEL(level), content, file, line);
         if(ret>-1 && ret<linelogSize){
             break;
         }
         linelogSize*=2;
         linelog = realloc(linelog, linelogSize * sizeof(char));
     }
-    logger_append(logger, linelog, ret);
     FREE(content);
+    logger_append(logger, linelog, ret);
     FREE(linelog);
 }

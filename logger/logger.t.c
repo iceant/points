@@ -3,6 +3,7 @@
 //
 #include <logger.h>
 #include <pr_thread.h>
+#include <pr_mutex.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -17,10 +18,10 @@ void writeThreadFn(void* args) {
     logger_t *logger = (logger_t *) args;
     int i=0;
     while (logger_isrunning(logger)) {
-        LOGGER_INFO(logger, "[%09d] %s", ++i, "Hello, Chen Peng");
+        i = i+1;
+        LOGGER_INFO(logger, "[%09d] %s", i, "Hello, Chen Peng");
     }
     printf("[%06d] Stopping writerThread... sended %d messages\n", pr_thread_self(), i);
-    pr_thread_exit(0);
 }
 
 void stopThreadFn(void* args){
@@ -43,8 +44,8 @@ int main(int argc, char** argv){
     pr_thread_t* thread2 = pr_thread_new(NULL, writeThreadFn, logger);
     pr_thread_t* thread3 = pr_thread_new(NULL, writeThreadFn, logger);
     pr_thread_t* thread4 = pr_thread_new(NULL, writeThreadFn, logger);
-//    pr_thread_t* thread5 = pr_thread_new(NULL, writeThreadFn, logger);
-//    pr_thread_t* thread6 = pr_thread_new(NULL, writeThreadFn, logger);
+    pr_thread_t* thread5 = pr_thread_new(NULL, writeThreadFn, logger);
+    pr_thread_t* thread6 = pr_thread_new(NULL, writeThreadFn, logger);
 //    pr_thread_t* thread7 = pr_thread_new(NULL, writeThreadFn, logger);
 //    pr_thread_t* thread8 = pr_thread_new(NULL, writeThreadFn, logger);
     pr_thread_t* stopThread = pr_thread_new(NULL, stopThreadFn, logger);
@@ -54,8 +55,8 @@ int main(int argc, char** argv){
     pr_thread_join(thread2);
     pr_thread_join(thread3);
     pr_thread_join(thread4);
-//    pr_thread_join(thread5);
-//    pr_thread_join(thread6);
+    pr_thread_join(thread5);
+    pr_thread_join(thread6);
 //    pr_thread_join(thread7);
 //    pr_thread_join(thread8);
 
@@ -64,8 +65,8 @@ int main(int argc, char** argv){
     pr_thread_delete(&thread2);
     pr_thread_delete(&thread3);
     pr_thread_delete(&thread4);
-//    pr_thread_delete(&thread5);
-//    pr_thread_delete(&thread6);
+    pr_thread_delete(&thread5);
+    pr_thread_delete(&thread6);
 //    pr_thread_delete(&thread7);
 //    pr_thread_delete(&thread8);
 
