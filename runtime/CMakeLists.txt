@@ -14,6 +14,10 @@ add_library(points-runtime pr_pool_blocklist.c
         pr_thread_attr.c
         pr_scopeguard.c
         pr_except.c
+        pr_workstealqueue.c
+        pr_threadsafequeue.c
+        pr_array.c
+        pr_threadpool.c
         )
 
 if(USE_PTHREAD)
@@ -59,3 +63,6 @@ target_link_libraries(pr_scopeguard.t points-runtime pthread)
 
 add_executable(pr_except.t pr_except.t.c)
 target_link_libraries(pr_except.t points-runtime pthread)
+
+add_executable(pr_array.t pr_array.t.c)
+target_link_libraries(pr_array.t points-runtime pthread)

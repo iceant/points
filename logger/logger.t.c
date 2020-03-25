@@ -13,15 +13,15 @@ void stopCallback(logger_t* logger, void* args){
 }
 
 void writeThreadFn(void* args) {
-    printf("[%06d] Writer Thread created!\n", pr_thread_self());
+    printf("[%06ld] Writer Thread created!\n", pr_thread_self());
     assert(args);
     logger_t *logger = (logger_t *) args;
     int i=0;
     while (logger_isrunning(logger)) {
         i = i+1;
-        LOGGER_INFO(logger, "[%09d] %s", i, "Hello, Chen Peng");
+        LOGGER_INFO(logger, "[%09d] %s", i, "Hello, Chen Peng, 中文!");
     }
-    printf("[%06d] Stopping writerThread... sended %d messages\n", pr_thread_self(), i);
+    printf("[%06ld] Stopping writerThread... sended %d messages\n", pr_thread_self(), i);
 }
 
 void stopThreadFn(void* args){

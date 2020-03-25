@@ -21,4 +21,6 @@ typedef enum pr_bool_e{
 #include "windows/pr_types_win.h"
 #endif
 
+typedef char* pr_byte_t;
+
 #endif //INCLUDED_PR_TYPES_H
