@@ -66,3 +66,6 @@ target_link_libraries(pr_except.t points-runtime pthread)
 
 add_executable(pr_array.t pr_array.t.c)
 target_link_libraries(pr_array.t points-runtime pthread)
+
+add_executable(pr_mutexpool.t pr_mutexpool.t.c)
+target_link_libraries(pr_mutexpool.t points-runtime pthread)

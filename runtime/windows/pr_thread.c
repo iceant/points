@@ -13,20 +13,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 typedef unsigned int (__stdcall (*pr_thread_proc))(void*);
 
-struct pr_thread_s{
-    pr_thread_handle_t d_handle;
-    pr_thread_id_t  d_threadId;
-    pr_bool_t d_isExisted;
-};
 ////////////////////////////////////////////////////////////////////////////////
 #define DEFAULT_STACK_SIZE 0
 
 ////////////////////////////////////////////////////////////////////////////////
-pr_thread_t* pr_thread_new(pr_thread_attr_t* attr, void (*startAddress)(void*), void* args){
-    pr_thread_t *p = MALLOC(sizeof(*p));
-    assert(p);
-    p->d_handle = NULL;
-    p->d_threadId=0;
+pr_thread_t pr_thread_new(pr_thread_attr_t* attr, void (*startAddress)(void*), void* args){
     int stackSize = DEFAULT_STACK_SIZE;
     DWORD dwCreateFlag = 0;
 
@@ -37,16 +28,14 @@ pr_thread_t* pr_thread_new(pr_thread_attr_t* attr, void (*startAddress)(void*), 
         }
     }
 
-    HANDLE hThread = (HANDLE)_beginthreadex(NULL/*PSECURITY_DESCRIPTION*/,
+    pr_thread_t handle = (HANDLE)_beginthreadex(NULL/*PSECURITY_DESCRIPTION*/,
               stackSize,
               (pr_thread_proc)startAddress,
               args,
               dwCreateFlag,
               (unsigned*)(&p->d_threadId)
             );
-    p->d_handle = hThread;
-    p->d_isExisted = ePR_FALSE;
-    return p;
+    return handle;
 }
 
 void pr_thread_delete(pr_thread_t** pThread){

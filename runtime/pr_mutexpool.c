@@ -65,7 +65,7 @@ void pr_pool_delete(pr_pool_t** pPool){
     assert(pPool);
     assert(*pPool);
     pr_pool_t * pool = *pPool;
-    if(!pool->d_lock_p){return;}
+
     pr_mutex_lock(pool->d_lock_p);
     if(0==pool->d_instanceCount){
         pr_pool_blocklist_delete(&pool->d_blockAllocator_p);
@@ -104,8 +104,8 @@ void pr_pool_free(pr_pool_t* pool, void* ptr){
     assert(pool);
     if(ptr==NULL) return;
     assert(pool->d_lock_p);
-    pr_mutex_lock(pool->d_lock_p);
     link_t* p = (link_t*) ptr;
+    pr_mutex_lock(pool->d_lock_p);
     p->d_next_p = pool->d_freeList_p;
     pool->d_freeList_p = p;
     --pool->d_instanceCount;

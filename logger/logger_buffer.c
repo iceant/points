@@ -3,7 +3,7 @@
 //
 #include <logger_buffer.h>
 #include <pr_types.h>
-#include <pr_mem.h>
+#include <pr_mem_util.h>
 #include <stdlib.h>
 #include <assert.h>
 
@@ -21,10 +21,11 @@ struct logger_buffer_s{
 ////////////////////////////////////////////////////////////////////////////////
 logger_buffer_t * logger_buffer_new(int capacity){
     assert(capacity>0);
-    logger_buffer_t* buffer = MALLOC(sizeof(*buffer));
+    logger_buffer_t* buffer = PR_MALLOC(sizeof(*buffer));
     assert(buffer);
     buffer->d_capacity = capacity;
-    buffer->d_data_p = MALLOC(sizeof(char)*capacity);
+    buffer->d_data_p = PR_MALLOC(sizeof(char)*capacity);
+    assert(buffer->d_data_p);
     buffer->d_used = 0;
     memset(buffer->d_data_p, 0, capacity);
     return buffer;
@@ -33,8 +34,8 @@ logger_buffer_t * logger_buffer_new(int capacity){
 void logger_buffer_delete(logger_buffer_t** pBuffer){
     assert(pBuffer);
     assert(*pBuffer);
-    FREE((*pBuffer)->d_data_p);
-    FREE(*pBuffer);
+    PR_FREE((*pBuffer)->d_data_p);
+    PR_FREE(*pBuffer);
 }
 
 void logger_buffer_append(logger_buffer_t* buffer, const char* content ,int length){

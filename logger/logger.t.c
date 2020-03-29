@@ -22,6 +22,7 @@ void writeThreadFn(void* args) {
         LOGGER_INFO(logger, "[%09d] %s", i, "Hello, Chen Peng, 中文!");
     }
     printf("[%06ld] Stopping writerThread... sended %d messages\n", pr_thread_self(), i);
+    pr_thread_exit(0);
 }
 
 void stopThreadFn(void* args){
@@ -71,5 +72,6 @@ int main(int argc, char** argv){
 //    pr_thread_delete(&thread8);
 
     logger_delete(&logger);
+
 }
 

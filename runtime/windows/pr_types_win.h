@@ -10,7 +10,7 @@
 #include <windows.h>
 #endif //INCLUDED_WINDOWS_H
 
-typedef HANDLE pr_thread_handle_t;
+typedef HANDLE pr_thread_t;
 typedef DWORD pr_thread_id_t;
 
 #endif //INCLUDED_PR_TYPES_WIN_H

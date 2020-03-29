@@ -3,7 +3,7 @@
 //
 #include <logger_buffervector.h>
 #include <logger_buffer.h>
-#include <pr_mem.h>
+#include <pr_mem_util.h>
 #include <stdlib.h>
 #include <assert.h>
 
@@ -25,7 +25,7 @@ struct logger_buffervectoriter_s{
 
 ////////////////////////////////////////////////////////////////////////////////
 logger_buffervector_t* logger_buffervector_new(){
-    logger_buffervector_t* p = MALLOC(sizeof(*p));
+    logger_buffervector_t* p = PR_MALLOC(sizeof(*p));
     assert(p);
     p->d_head.d_next_p = NULL;
     p->d_head.d_value_p = NULL;
@@ -42,24 +42,24 @@ void logger_buffervector_delete(logger_buffervector_t** pVector, void (*destruct
         while (vector->d_head.d_next_p) {
             link_t *p = vector->d_head.d_next_p;
             vector->d_head.d_next_p = p->d_next_p;
-            FREE(p);
+            PR_FREE(p);
         }
     }else{
         while (vector->d_head.d_next_p) {
             link_t *p = vector->d_head.d_next_p;
             vector->d_head.d_next_p = p->d_next_p;
             destructor(p->d_value_p, args);
-            FREE(p);
+            PR_FREE(p);
         }
     }
     vector->d_tail_p = &vector->d_head;
-    FREE(*pVector);
+    PR_FREE(*pVector);
 }
 
 void logger_buffervector_add(logger_buffervector_t* vector, logger_buffer_t* buffer){
     assert(vector);
     assert(buffer);
-    link_t * p = MALLOC(sizeof(*p));
+    link_t * p = PR_MALLOC(sizeof(*p));
     assert(p);
     p->d_value_p = buffer;
     p->d_next_p = NULL;
@@ -83,7 +83,7 @@ void logger_buffervector_pop(logger_buffervector_t* vector, logger_buffer_t** bu
    if(vector->d_size==0){
        vector->d_tail_p = &vector->d_head;
    }
-   FREE(p);
+   PR_FREE(p);
 }
 
 void logger_buffervector_clear(logger_buffervector_t* vector, void (*releaseFn)(logger_buffer_t*, void*), void* args){
@@ -94,13 +94,13 @@ void logger_buffervector_clear(logger_buffervector_t* vector, void (*releaseFn)(
             p = vector->d_head.d_next_p;
             vector->d_head.d_next_p = p->d_next_p;
             releaseFn(p->d_value_p, args);
-            FREE(p);
+            PR_FREE(p);
         }
     }else{
         while(vector->d_head.d_next_p){
             p = vector->d_head.d_next_p;
             vector->d_head.d_next_p = p->d_next_p;
-            FREE(p);
+            PR_FREE(p);
         }
     }
     vector->d_tail_p = &vector->d_head;
@@ -109,7 +109,7 @@ void logger_buffervector_clear(logger_buffervector_t* vector, void (*releaseFn)(
 ////////////////////////////////////////////////////////////////////////////////
 logger_buffervectoriter_t * logger_buffervectoriter_new(logger_buffervector_t* vector){
     assert(vector);
-    logger_buffervectoriter_t* p = MALLOC(sizeof(*p));
+    logger_buffervectoriter_t* p = PR_MALLOC(sizeof(*p));
     assert(p);
     p->d_link_p = &vector->d_head.d_next_p;
     return p;
@@ -118,7 +118,7 @@ logger_buffervectoriter_t * logger_buffervectoriter_new(logger_buffervector_t* v
 void logger_buffervectoriter_delete(logger_buffervectoriter_t** pIter){
     assert(pIter);
     assert(*pIter);
-    FREE(*pIter);
+    PR_FREE(*pIter);
 }
 
 void logger_buffervectoriter_next(logger_buffervectoriter_t* iter){
@@ -142,5 +142,5 @@ void logger_buffervectoriter_remove(logger_buffervectoriter_t* iter){
     link_t* p = *iter->d_link_p;
     assert(p);
     *iter->d_link_p = p->d_next_p;
-    FREE(p);
+    PR_FREE(p);
 }

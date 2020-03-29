@@ -11,7 +11,6 @@ typedef struct logger_buffer_s logger_buffer_t;
 ////////////////////////////////////////////////////////////////////////////////
 
 logger_buffer_t* logger_buffer_new(int capacity);
-    // pool is bind with a thread
 
 void logger_buffer_delete(logger_buffer_t**);
 

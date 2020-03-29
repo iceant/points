@@ -5,9 +5,9 @@
 #include <logger.h>
 #include <logger_buffer.h>
 #include <logger_buffervector.h>
-#include <pr_threadlocal.h>
+#include <pr_thread_local.h>
 #include <pr_types.h>
-#include <pr_mem.h>
+#include <pr_mem_util.h>
 #include <pr_mutex.h>
 #include <pr_condition.h>
 #include <pr_thread.h>
@@ -26,7 +26,7 @@ struct logger_s{
     pr_condition_t *            d_stopCond_p;
 
     pr_thread_t*                d_thread_p;
-    pr_threadlocal_t*           d_threadId_p;
+    pr_thread_local_t*           d_threadId_p;
 
     logger_buffer_t *           d_current_p;
     logger_buffer_t *           d_next_p;
@@ -53,8 +53,6 @@ struct logger_s{
 ////////////////////////////////////////////////////////////////////////////////
 // static functions
 
-//static __thread pr_thread_id_t s_tls_threadId;
-
 static inline void getTimestamp(char* currentTime){
     time_t rawtime;
     struct timeval now;
@@ -69,10 +67,9 @@ static inline void getTimestamp(char* currentTime){
 }
 
 static inline pr_thread_id_t getCurrentThreadId(logger_t* logger){
-    pr_thread_id_t id = (pr_thread_id_t)pr_threadlocal_get(logger->d_threadId_p);
+    pr_thread_id_t id = (pr_thread_id_t)pr_thread_local_get(logger->d_threadId_p);
     if(id==0){
-       id = pr_thread_self();
-       pr_threadlocal_set(logger->d_threadId_p, (void*)id);
+       id = pr_thread_self(); pr_thread_local_set(logger->d_threadId_p, (void*)id);
     }
     return id;
 }
@@ -84,8 +81,6 @@ static inline void flushBuffersToFile(logger_t* logger, logger_buffervector_t* v
     while(logger_buffervectoriter_hasmore(iter)){
         logger_buffer_t* buffer = logger_buffervectoriter_get(iter);
         fwrite(logger_buffer_get(buffer), sizeof(char), logger_buffer_used(buffer), logger->d_file_p);
-//        logger_buffer_delete(&buffer);
-//        logger_buffervectoriter_remove(iter);
         logger_buffervectoriter_next(iter);
     }
     logger_buffervectoriter_delete(&iter);
@@ -140,7 +135,7 @@ static void logger_threadFn(void* args){
             logger_buffervector_pop(buffersToWrite, &newBuffer2);
             logger_buffer_reset(newBuffer2);
         }
-        logger_buffervector_clear(buffersToWrite, bufferRelease, NULL);
+        logger_buffervector_clear(buffersToWrite, bufferRelease, logger);
     }
 
     pr_mutex_lock(logger->d_lock_p);
@@ -159,7 +154,7 @@ static void logger_threadFn(void* args){
         logger_buffer_delete(&newBuffer2);
     }
     if(buffersToWrite!=NULL){
-        logger_buffervector_delete(&buffersToWrite, bufferRelease, NULL);
+        logger_buffervector_delete(&buffersToWrite, bufferRelease, logger);
     }
 
     if(logger->d_stopCallback){
@@ -199,7 +194,7 @@ void logger_append(logger_t* logger, const char* logline, int len){
 ////////////////////////////////////////////////////////////////////////////////
 logger_t * logger_new(const char* file, logger_level_t level){
     assert(file);
-    logger_t * logger = MALLOC(sizeof(*logger));
+    logger_t * logger = PR_MALLOC(sizeof(*logger));
     assert(logger);
     logger->d_file_p = fopen(file, "a+");
     assert(logger->d_file_p);
@@ -214,11 +209,12 @@ logger_t * logger_new(const char* file, logger_level_t level){
 
     logger->d_current_p = logger_buffer_new(BUFFER_SIZE);
     assert(logger->d_current_p);
+
     logger->d_next_p = logger_buffer_new(BUFFER_SIZE);
     assert(logger->d_next_p);
 
     logger->d_thread_p = NULL;
-    logger->d_threadId_p = pr_threadlocal_new(NULL);
+    logger->d_threadId_p = pr_thread_local_new(NULL);
 
     logger->d_status = STATUS_NA;
     logger->d_level = level;
@@ -237,26 +233,27 @@ void logger_delete(logger_t** pLogger){
        pr_condition_wait(logger->d_stopCond_p);
    }
 
-   if(logger->d_thread_p){
-       pr_thread_delete(&logger->d_thread_p);
-   }
-   pr_threadlocal_delete(&logger->d_threadId_p);
+    if(logger->d_thread_p){
+        pr_thread_delete(&logger->d_thread_p);
+    }
+    pr_thread_local_delete(&logger->d_threadId_p);
 
-   if(logger->d_current_p) {
-       logger_buffer_delete(&logger->d_current_p);
-   }
-   if(logger->d_next_p){
-       logger_buffer_delete(&logger->d_next_p);
-   }
-   logger_buffervector_delete(&logger->d_buffers_p, bufferRelease, NULL);
-   fclose(logger->d_file_p);
-   logger->d_status = STATUS_NA;
-   pr_mutex_unlock(logger->d_lock_p);
+    logger_buffervector_delete(&logger->d_buffers_p, bufferRelease, logger);
+    if(logger->d_current_p) {
+        logger_buffer_delete(&logger->d_current_p);
+    }
+    if(logger->d_next_p){
+        logger_buffer_delete(&logger->d_next_p);
+    }
 
-   pr_condition_delete(&logger->d_cond_p);
-   pr_mutex_delete(&logger->d_lock_p);
+    fclose(logger->d_file_p);
+    logger->d_status = STATUS_NA;
+    pr_mutex_unlock(logger->d_lock_p);
 
-   FREE(*pLogger);
+    pr_condition_delete(&logger->d_cond_p);
+    pr_mutex_delete(&logger->d_lock_p);
+
+    PR_FREE(*pLogger);
 }
 
 void logger_start(logger_t* logger, void(*startCallback)(logger_t*, void* args), void* args){
@@ -329,7 +326,7 @@ void logger_printf(logger_t* logger, logger_level_t level, const char* file, con
         linelogSize*=2;
         linelog = realloc(linelog, linelogSize * sizeof(char));
     }
-    FREE(content);
+    PR_FREE(content);
     logger_append(logger, linelog, ret);
-    FREE(linelog);
+    PR_FREE(linelog);
 }
